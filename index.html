@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplest Working Calculator</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            padding: 20px;
+        }
+        
+        .calculator-container {
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            width: 350px;
+            max-width: 100%;
+        }
+        
+        .display {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-size: 2.5rem;
+            font-weight: 300;
+            height: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 2px solid #e9ecef;
+        }
+        
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 16px 0;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-number {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        
+        .btn-operation {
+            background-color: #4cc9f0;
+            color: white;
+        }
+        
+        .btn-reset {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-equals {
+            background-color: #38b000;
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #495057;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .history {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 2px solid #e9ecef;
+        }
+        
+        .history h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #6c757d;
+        }
+        
+        .history-item {
+            font-size: 0.9rem;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+            color: #495057;
+        }
+        
+        @media (max-width: 400px) {
+            .calculator-container {
+                padding: 15px;
+            }
+            
+            .display {
+                font-size: 2rem;
+                height: 70px;
+            }
+            
+            .btn {
+                padding: 14px 0;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        const Calculator = () => {
+            const [input, setInput] = useState('0');
+            const [result, setResult] = useState('0');
+            const [history, setHistory] = useState([]);
+            const [operation, setOperation] = useState(null);
+            const [prevValue, setPrevValue] = useState(null);
+
+            const handleNumberClick = (number) => {
+                if (input === '0' || input === 'Error') {
+                    setInput(number.toString());
+                } else {
+                    setInput(input + number.toString());
+                }
+            };
+
+            const handleOperationClick = (op) => {
+                if (input === 'Error') return;
+                
+                if (operation !== null) {
+                    calculateResult();
+                }
+                
+                setPrevValue(parseFloat(input));
+                setOperation(op);
+                setInput('0');
+            };
+
+            const calculateResult = () => {
+                if (operation === null || prevValue === null) return;
+                
+                const currentValue = parseFloat(input);
+                let newResult;
+                
+                try {
+                    switch(operation) {
+                        case 'add':
+                            newResult = prevValue + currentValue;
+                            break;
+                        case 'subtract':
+                            newResult = prevValue - currentValue;
+                            break;
+                        case 'multiply':
+                            newResult = prevValue * currentValue;
+                            break;
+                        case 'divide':
+                            if (currentValue === 0) throw new Error('Division by zero');
+                            newResult = prevValue / currentValue;
+                            break;
+                        default:
+                            return;
+                    }
+                    
+                    setResult(newResult.toString());
+                    setHistory([...history, `${prevValue} ${getOperationSymbol(operation)} ${currentValue} = ${newResult}`]);
+                    setInput(newResult.toString());
+                } catch (error) {
+                    setInput('Error');
+                    setResult('Error');
+                }
+                
+                setOperation(null);
+                setPrevValue(null);
+            };
+
+            const getOperationSymbol = (op) => {
+                switch(op) {
+                    case 'add': return '+';
+                    case 'subtract': return '-';
+                    case 'multiply': return '×';
+                    case 'divide': return '÷';
+                    default: return '';
+                }
+            };
+
+            const handleResetInput = () => {
+                setInput('0');
+            };
+
+            const handleResetResult = () => {
+                setInput('0');
+                setResult('0');
+                setOperation(null);
+                setPrevValue(null);
+            };
+
+            const handleResetAll = () => {
+                setInput('0');
+                setResult('0');
+                setOperation(null);
+                setPrevValue(null);
+                setHistory([]);
+            };
+
+            return (
+                <div className="calculator-container">
+                    <h1 className="title">Simplest Working Calculator</h1>
+                    
+                    <div className="display" data-testid="display">
+                        {input}
+                    </div>
+                    
+                    <div className="buttons-grid">
+                        <button className="btn btn-number" onClick={() => handleNumberClick(7)}>7</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(8)}>8</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(9)}>9</button>
+                        <button className="btn btn-operation" onClick={() => handleOperationClick('divide')}>÷</button>
+                        
+                        <button className="btn btn-number" onClick={() => handleNumberClick(4)}>4</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(5)}>5</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(6)}>6</button>
+                        <button className="btn btn-operation" onClick={() => handleOperationClick('multiply')}>×</button>
+                        
+                        <button className="btn btn-number" onClick={() => handleNumberClick(1)}>1</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(2)}>2</button>
+                        <button className="btn btn-number" onClick={() => handleNumberClick(3)}>3</button>
+                        <button className="btn btn-operation" onClick={() => handleOperationClick('subtract')}>-</button>
+                        
+                        <button className="btn btn-number" onClick={() => handleNumberClick(0)}>0</button>
+                        <button className="btn btn-reset" onClick={handleResetInput}>Reset Input</button>
+                        <button className="btn btn-operation" onClick={() => handleOperationClick('add')}>+</button>
+                        <button className="btn btn-equals" onClick={calculateResult}>=</button>
+                        
+                        <button className="btn btn-reset" onClick={handleResetResult} style={{gridColumn: 'span 2'}}>Reset Result</button>
+                        <button className="btn btn-reset" onClick={handleResetAll} style={{gridColumn: 'span 2'}}>Reset All</button>
+                    </div>
+                    
+                    <div className="history">
+                        <h3>Calculation History:</h3>
+                        {history.length === 0 ? (
+                            <p className="history-item">No calculations yet</p>
+                        ) : (
+                            history.map((item, index) => (
+                                <p key={index} className="history-item">{item}</p>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <div>
+                    <Calculator />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
